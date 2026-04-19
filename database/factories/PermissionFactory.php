@@ -18,12 +18,11 @@ class PermissionFactory extends Factory
      */
     public function definition(): array
     {
-        $name = Str::headline(fake()->unique()->words(2, true));
+        $name = Str::slug(fake()->unique()->words(2, true), '.');
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name),
-            'description' => fake()->sentence(),
+            'guard_name' => 'web',
         ];
     }
 }

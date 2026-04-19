@@ -3,28 +3,29 @@
 namespace App\Models;
 
 use Database\Factories\RoleFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-#[Fillable(['account_id', 'name', 'slug', 'description', 'is_system'])]
-class Role extends Model
+class Role extends SpatieRole
 {
     /** @use HasFactory<RoleFactory> */
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
-     * Get the attribute casts.
-     *
-     * @return array<string, string>
+     * Configure activity log options.
      */
-    protected function casts(): array
+    public function getActivitylogOptions(): LogOptions
     {
-        return [
-            'is_system' => 'boolean',
-        ];
+        $teamForeignKey = (string) config('permission.column_names.team_foreign_key', 'account_id');
+
+        return LogOptions::defaults()
+            ->useLogName('authorization')
+            ->logOnly(['name', 'guard_name', $teamForeignKey])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 
     /**
@@ -32,15 +33,9 @@ class Role extends Model
      */
     public function account(): BelongsTo
     {
-        return $this->belongsTo(Account::class);
-    }
-
-    /**
-     * Get the permissions assigned to this role.
-     */
-    public function permissions(): BelongsToMany
-    {
-        return $this->belongsToMany(Permission::class)
-            ->withTimestamps();
+        return $this->belongsTo(
+            Account::class,
+            (string) config('permission.column_names.team_foreign_key', 'account_id'),
+        );
     }
 }
