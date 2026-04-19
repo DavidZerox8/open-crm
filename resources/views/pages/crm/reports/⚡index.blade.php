@@ -88,9 +88,9 @@ new #[Title('Reports')] class extends Component {
 
 <section class="w-full">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.reports.title')" :subtitle="__('crm.dashboard.title')" />
+        <x-crm.entity-header :title="__('crm.reports.title')" :subtitle="__('crm.dashboard.title')" data-tour="reports-header" />
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="reports-kpis">
             <x-crm.stat-card :label="__('crm.reports.kpi_conversion_rate')" :value="$this->conversionRate . '%'" icon="arrows-right-left" />
             <x-crm.stat-card :label="__('crm.reports.kpi_won_value')" :value="number_format($this->wonDealsValue, 2, ',', '.') . ' EUR'" icon="trophy" />
             <x-crm.stat-card :label="__('crm.reports.kpi_open_value')" :value="number_format($this->openDealsValue, 2, ',', '.') . ' EUR'" icon="chart-bar" />
@@ -98,7 +98,7 @@ new #[Title('Reports')] class extends Component {
         </div>
 
         <div class="grid gap-4 xl:grid-cols-5">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-funnel">
                 <flux:heading size="lg">{{ __('crm.reports.funnel_by_stage') }}</flux:heading>
 
                 @if ($this->stages->isEmpty())
@@ -129,7 +129,7 @@ new #[Title('Reports')] class extends Component {
                 @endif
             </section>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-activity">
                 <flux:heading size="lg">{{ __('crm.reports.activity_by_user') }}</flux:heading>
 
                 @if ($this->activityLeaders->isEmpty())

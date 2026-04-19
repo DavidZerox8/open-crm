@@ -116,17 +116,17 @@ new #[Title('Tasks')] class extends Component {
 
 <section class="w-full">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.tasks.title')" :subtitle="__('crm.labels.task')">
+        <x-crm.entity-header :title="__('crm.tasks.title')" :subtitle="__('crm.labels.task')" data-tour="tasks-header">
             <x-slot:actions>
                 @can('create', \App\Models\CRM\Task::class)
-                    <flux:button variant="primary" wire:click="$set('showCreateModal', true)">
+                    <flux:button variant="primary" wire:click="$set('showCreateModal', true)" data-tour="tasks-create">
                         {{ __('crm.tasks.create') }}
                     </flux:button>
                 @endcan
             </x-slot:actions>
         </x-crm.entity-header>
 
-        <div class="grid gap-3 rounded-xl border border-neutral-200 bg-white p-4 md:grid-cols-3 dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="grid gap-3 rounded-xl border border-neutral-200 bg-white p-4 md:grid-cols-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="tasks-filters">
             <flux:input wire:model.live.debounce.300ms="search" :label="__('Search')" type="text" placeholder="Título" />
 
             <flux:field>
@@ -153,7 +153,7 @@ new #[Title('Tasks')] class extends Component {
         @if ($this->tasks->isEmpty())
             <x-crm.empty-state icon="clipboard-document-check" :heading="__('crm.tasks.empty')" :subheading="__('crm.tasks.create')" />
         @else
-            <div class="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900">
+            <div class="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900" data-tour="tasks-table">
                 <table class="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-700">
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60">
                         <tr>

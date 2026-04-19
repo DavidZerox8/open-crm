@@ -72,9 +72,9 @@ new #[Title('Pipeline')] class extends Component {
 
 <section class="w-full">
     <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.pipeline.title')" :subtitle="__('crm.deals.title')" />
+        <x-crm.entity-header :title="__('crm.pipeline.title')" :subtitle="__('crm.deals.title')" data-tour="pipeline-header" />
 
-        <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="pipeline-selector">
             <flux:field>
                 <flux:label>{{ __('crm.labels.pipeline') }}</flux:label>
                 <flux:select wire:model.live="pipeline_id">
@@ -88,7 +88,7 @@ new #[Title('Pipeline')] class extends Component {
         @if (! $this->selectedPipeline)
             <x-crm.empty-state icon="view-columns" :heading="__('crm.pipeline.title')" />
         @else
-            <div class="grid gap-4 lg:grid-cols-4">
+            <div class="grid gap-4 lg:grid-cols-4" data-tour="pipeline-board">
                 @foreach ($this->selectedPipeline->stages as $stage)
                     <section class="rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-zinc-900">
                         <div class="mb-3 flex items-center justify-between gap-2">

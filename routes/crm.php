@@ -1,12 +1,17 @@
 <?php
 
 use App\Http\Controllers\Account\SwitchAccountController;
+use App\Http\Controllers\CRM\TutorialStateController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/accounts/switch', SwitchAccountController::class)->name('accounts.switch');
 
     Route::prefix('crm')->name('crm.')->group(function () {
+        Route::get('tutorial/state', [TutorialStateController::class, 'show'])->name('tutorial.state');
+        Route::post('tutorial/state', [TutorialStateController::class, 'update'])->name('tutorial.state.update');
+        Route::post('tutorial/restart', [TutorialStateController::class, 'restart'])->name('tutorial.restart');
+
         Route::livewire('/', 'pages::crm.dashboard')->name('dashboard');
 
         Route::livewire('leads', 'pages::crm.leads.index')->name('leads.index');

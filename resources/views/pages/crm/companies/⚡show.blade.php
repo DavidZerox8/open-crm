@@ -54,6 +54,7 @@ new #[Title('Company')] class extends Component {
         <x-crm.entity-header
             :title="$company->name"
             :subtitle="$company->industry ?: __('crm.companies.title')"
+            data-tour="company-header"
         >
             <x-slot:actions>
                 <flux:button :href="route('crm.companies.index')" variant="ghost" wire:navigate>
@@ -63,7 +64,7 @@ new #[Title('Company')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="company-details">
                 <flux:heading size="lg">{{ __('crm.labels.company') }}</flux:heading>
 
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -93,7 +94,7 @@ new #[Title('Company')] class extends Component {
                 @endif
             </section>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="company-contacts">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 @if ($this->contacts->isEmpty())
@@ -112,7 +113,7 @@ new #[Title('Company')] class extends Component {
         </div>
 
         <div class="grid gap-4 xl:grid-cols-5">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="company-deals">
                 <flux:heading size="lg">{{ __('crm.deals.title') }}</flux:heading>
 
                 @if ($this->deals->isEmpty())

@@ -78,6 +78,7 @@ new #[Title('CRM Dashboard')] class extends Component {
         <x-crm.entity-header
             :title="__('crm.dashboard.title')"
             :subtitle="__('crm.dashboard.recent_activity')"
+            data-tour="dashboard-header"
         >
             <x-slot:actions>
                 <flux:button :href="route('crm.leads.index')" variant="primary" wire:navigate>
@@ -86,7 +87,7 @@ new #[Title('CRM Dashboard')] class extends Component {
             </x-slot:actions>
         </x-crm.entity-header>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="dashboard-kpis">
             <x-crm.stat-card
                 :label="__('crm.dashboard.kpi_open_deals')"
                 :value="$this->openDeals"
@@ -110,7 +111,7 @@ new #[Title('CRM Dashboard')] class extends Component {
         </div>
 
         <div class="grid gap-4 xl:grid-cols-5">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="dashboard-activity">
                 <div class="mb-4 flex items-center justify-between">
                     <flux:heading size="lg">{{ __('crm.dashboard.recent_activity') }}</flux:heading>
                     <flux:button :href="route('crm.reports.index')" variant="ghost" size="sm" wire:navigate>
@@ -121,7 +122,7 @@ new #[Title('CRM Dashboard')] class extends Component {
                 <x-crm.activity-timeline :activities="$this->recentActivities" />
             </section>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="dashboard-tasks">
                 <div class="mb-4 flex items-center justify-between">
                     <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
                     <flux:button :href="route('crm.tasks.index')" variant="ghost" size="sm" wire:navigate>

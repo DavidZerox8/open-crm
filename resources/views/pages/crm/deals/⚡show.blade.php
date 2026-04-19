@@ -138,6 +138,7 @@ new #[Title('Deal')] class extends Component {
             :subtitle="$deal->company?->name ?: __('crm.deals.title')"
             :badge="$deal->status->label()"
             :badge-color="$deal->status->color()"
+            data-tour="deal-header"
         >
             <x-slot:actions>
                 <flux:button :href="route('crm.pipeline.board')" variant="ghost" wire:navigate>
@@ -188,7 +189,7 @@ new #[Title('Deal')] class extends Component {
                 @endif
 
                 @if ($deal->status === \App\Enums\DealStatus::Open)
-                    <div class="space-y-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+                    <div class="space-y-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-700" data-tour="deal-stage-panel">
                         <flux:heading size="sm">{{ __('crm.deals.move_stage') }}</flux:heading>
 
                         <form wire:submit="moveStage" class="flex flex-wrap items-end gap-3">
@@ -223,7 +224,7 @@ new #[Title('Deal')] class extends Component {
                 @endif
             </section>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-tasks">
                 <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
 
                 @if ($this->tasks->isEmpty())
@@ -255,7 +256,7 @@ new #[Title('Deal')] class extends Component {
             </section>
 
             @if (auth()->user()->can('activities.create'))
-                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-activity-form">
                     <flux:heading size="lg">{{ __('crm.actions.log_activity') }}</flux:heading>
 
                     <form wire:submit="createActivity" class="mt-4 space-y-3">

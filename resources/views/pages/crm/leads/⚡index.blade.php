@@ -107,17 +107,17 @@ new #[Title('Leads')] class extends Component {
 
 <section class="w-full">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.leads.title')" :subtitle="__('crm.labels.status')">
+        <x-crm.entity-header :title="__('crm.leads.title')" :subtitle="__('crm.labels.status')" data-tour="leads-header">
             <x-slot:actions>
                 @can('create', \App\Models\CRM\Lead::class)
-                    <flux:button variant="primary" wire:click="$set('showCreateModal', true)">
+                    <flux:button variant="primary" wire:click="$set('showCreateModal', true)" data-tour="leads-create">
                         {{ __('crm.leads.create') }}
                     </flux:button>
                 @endcan
             </x-slot:actions>
         </x-crm.entity-header>
 
-        <div class="grid gap-3 rounded-xl border border-neutral-200 bg-white p-4 md:grid-cols-3 dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="grid gap-3 rounded-xl border border-neutral-200 bg-white p-4 md:grid-cols-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="leads-filters">
             <flux:input wire:model.live.debounce.300ms="search" :label="__('Search')" type="text" placeholder="Nombre, empresa o email" />
 
             <flux:field>
@@ -134,7 +134,7 @@ new #[Title('Leads')] class extends Component {
         @if ($this->leads->isEmpty())
             <x-crm.empty-state icon="user-plus" :heading="__('crm.leads.empty')" :subheading="__('crm.leads.create')" />
         @else
-            <div class="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900">
+            <div class="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900" data-tour="leads-table">
                 <table class="min-w-full divide-y divide-neutral-200 text-sm dark:divide-neutral-700">
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60">
                         <tr>

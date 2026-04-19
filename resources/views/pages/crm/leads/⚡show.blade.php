@@ -86,10 +86,11 @@ new #[Title('Lead')] class extends Component {
             :subtitle="$lead->company_name ?: __('crm.leads.title')"
             :badge="$lead->status->label()"
             :badge-color="$lead->status->color()"
+            data-tour="lead-header"
         >
             <x-slot:actions>
                 @can('convert', $lead)
-                    <flux:button variant="primary" wire:click="convert">
+                    <flux:button variant="primary" wire:click="convert" data-tour="lead-convert">
                         {{ __('crm.actions.convert') }}
                     </flux:button>
                 @endcan
@@ -100,7 +101,7 @@ new #[Title('Lead')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-details">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -189,7 +190,7 @@ new #[Title('Lead')] class extends Component {
             </section>
 
             @if (auth()->user()->can('activities.create'))
-                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-activity-form">
                     <flux:heading size="lg">{{ __('crm.actions.log_activity') }}</flux:heading>
 
                     <form wire:submit="createActivity" class="mt-4 space-y-3">

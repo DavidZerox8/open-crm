@@ -44,6 +44,7 @@ new #[Title('Contact')] class extends Component {
         <x-crm.entity-header
             :title="$contact->fullName()"
             :subtitle="$contact->job_title ?: __('crm.contacts.title')"
+            data-tour="contact-header"
         >
             <x-slot:actions>
                 @if ($contact->company)
@@ -58,7 +59,7 @@ new #[Title('Contact')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-details">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -88,7 +89,7 @@ new #[Title('Contact')] class extends Component {
                 @endif
             </section>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-deals">
                 <flux:heading size="lg">{{ __('crm.deals.title') }}</flux:heading>
 
                 @if ($this->deals->isEmpty())

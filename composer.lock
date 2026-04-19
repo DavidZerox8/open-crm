@@ -3130,7 +3130,7 @@
                     "homepage": "https://laravel-lang.com"
                 }
             ],
-            "description": "Translations for Laravel Starter Kits",
+            "description": "A simple CRM built with Laravel and Livewire, with support for multiple languages.",
             "keywords": [
                 "i18n",
                 "lang",

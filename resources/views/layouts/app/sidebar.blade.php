@@ -3,7 +3,14 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
+    <body
+        class="min-h-screen bg-white dark:bg-zinc-800"
+        data-current-route-name="{{ request()->route()?->getName() ?? '' }}"
+        data-crm-tutorial-state-url="{{ route('crm.tutorial.state') }}"
+        data-crm-tutorial-update-url="{{ route('crm.tutorial.state.update') }}"
+        data-crm-tutorial-restart-url="{{ route('crm.tutorial.restart') }}"
+        data-crm-locale="{{ app()->getLocale() }}"
+    >
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
@@ -11,59 +18,32 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('crm.nav.crm')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('crm.dashboard')" :current="request()->routeIs('crm.dashboard')" wire:navigate>
+                <flux:sidebar.group :heading="__('crm.nav.crm')" class="grid" data-tour="crm-sidebar">
+                    <flux:sidebar.item icon="home" :href="route('crm.dashboard')" :current="request()->routeIs('crm.dashboard')" wire:navigate data-tour="crm-nav-dashboard">
                         {{ __('crm.nav.dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="user-plus" :href="route('crm.leads.index')" :current="request()->routeIs('crm.leads.*')" wire:navigate>
+                    <flux:sidebar.item icon="user-plus" :href="route('crm.leads.index')" :current="request()->routeIs('crm.leads.*')" wire:navigate data-tour="crm-nav-leads">
                         {{ __('crm.nav.leads') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="building-office-2" :href="route('crm.companies.index')" :current="request()->routeIs('crm.companies.*')" wire:navigate>
+                    <flux:sidebar.item icon="building-office-2" :href="route('crm.companies.index')" :current="request()->routeIs('crm.companies.*')" wire:navigate data-tour="crm-nav-companies">
                         {{ __('crm.nav.companies') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="users" :href="route('crm.contacts.index')" :current="request()->routeIs('crm.contacts.*')" wire:navigate>
+                    <flux:sidebar.item icon="users" :href="route('crm.contacts.index')" :current="request()->routeIs('crm.contacts.*')" wire:navigate data-tour="crm-nav-contacts">
                         {{ __('crm.nav.contacts') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="view-columns" :href="route('crm.pipeline.board')" :current="request()->routeIs('crm.pipeline.*')" wire:navigate>
+                    <flux:sidebar.item icon="view-columns" :href="route('crm.pipeline.board')" :current="request()->routeIs('crm.pipeline.*')" wire:navigate data-tour="crm-nav-pipeline">
                         {{ __('crm.nav.pipeline') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-check" :href="route('crm.tasks.index')" :current="request()->routeIs('crm.tasks.*')" wire:navigate>
+                    <flux:sidebar.item icon="clipboard-document-check" :href="route('crm.tasks.index')" :current="request()->routeIs('crm.tasks.*')" wire:navigate data-tour="crm-nav-tasks">
                         {{ __('crm.nav.tasks') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="chart-bar" :href="route('crm.reports.index')" :current="request()->routeIs('crm.reports.*')" wire:navigate>
+                    <flux:sidebar.item icon="chart-bar" :href="route('crm.reports.index')" :current="request()->routeIs('crm.reports.*')" wire:navigate data-tour="crm-nav-reports">
                         {{ __('crm.nav.reports') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-
-                <flux:sidebar.group :heading="'Settings'" class="grid">
-                    <flux:sidebar.item icon="cog" :href="route('profile.edit')" :current="request()->routeIs('profile.edit')" wire:navigate>
-                        {{ __('Profile') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="shield-check" :href="route('security.edit')" :current="request()->routeIs('security.edit')" wire:navigate>
-                        {{ __('Security') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="paint-brush" :href="route('appearance.edit')" :current="request()->routeIs('appearance.edit')" wire:navigate>
-                        {{ __('Appearance') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                <form method="POST" action="{{ route('logout') }}" class="w-full">
-                    @csrf
-                    <flux:sidebar.item
-                        as="button"
-                        type="submit"
-                        icon="arrow-right-start-on-rectangle"
-                        class="w-full cursor-pointer"
-                        data-test="logout-button"
-                    >
-                        {{ __('Log out') }}
-                    </flux:sidebar.item>
-                </form>
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>

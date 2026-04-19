@@ -10,6 +10,7 @@ return [
         'pipeline' => 'Pipeline',
         'tasks' => 'Tareas',
         'reports' => 'Reportes',
+        'tutorial' => 'Tutorial',
     ],
 
     'actions' => [
