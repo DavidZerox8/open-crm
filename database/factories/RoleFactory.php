@@ -24,9 +24,7 @@ class RoleFactory extends Factory
         return [
             'account_id' => Account::factory(),
             'name' => $name,
-            'slug' => Str::slug($name),
-            'description' => fake()->sentence(),
-            'is_system' => false,
+            'guard_name' => 'web',
         ];
     }
 }

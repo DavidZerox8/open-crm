@@ -3,23 +3,25 @@
 namespace App\Models;
 
 use Database\Factories\PermissionFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 
-#[Fillable(['name', 'slug', 'description'])]
-class Permission extends Model
+class Permission extends SpatiePermission
 {
     /** @use HasFactory<PermissionFactory> */
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
-     * Get the roles that include this permission.
+     * Configure activity log options.
      */
-    public function roles(): BelongsToMany
+    public function getActivitylogOptions(): LogOptions
     {
-        return $this->belongsToMany(Role::class)
-            ->withTimestamps();
+        return LogOptions::defaults()
+            ->useLogName('authorization')
+            ->logOnly(['name', 'guard_name'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 }

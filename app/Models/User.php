@@ -3,23 +3,33 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\CRM\Company;
+use App\Models\CRM\Contact;
+use App\Models\CRM\Deal;
+use App\Models\CRM\Lead;
+use App\Models\CRM\Task;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Activitylog\Models\Concerns\CausesActivity;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'current_account_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use CausesActivity, HasFactory, HasRoles, LogsActivity, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -33,6 +43,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Configure activity log options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('users')
+            ->logOnly(['name', 'email', 'current_account_id'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 
     /**
@@ -54,33 +76,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the roles assigned to this user across accounts.
-     */
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class, 'account_user_role')
-            ->withPivot('account_id')
-            ->withTimestamps();
-    }
-
-    /**
-     * Determine whether the user has a role in the given account.
-     */
-    public function hasRole(string $roleSlug, ?Account $account = null): bool
-    {
-        $account ??= $this->currentAccount;
-
-        if ($account === null) {
-            return false;
-        }
-
-        return $this->roles()
-            ->where('roles.slug', $roleSlug)
-            ->wherePivot('account_id', $account->id)
-            ->exists();
-    }
-
-    /**
      * Get the user's initials
      */
     public function initials(): string
@@ -90,5 +85,35 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    public function assignedTasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
+
+    public function createdTasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'created_by');
+    }
+
+    public function ownedLeads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'owner_id');
+    }
+
+    public function ownedDeals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'owner_id');
+    }
+
+    public function ownedCompanies(): HasMany
+    {
+        return $this->hasMany(Company::class, 'owner_id');
+    }
+
+    public function ownedContacts(): HasMany
+    {
+        return $this->hasMany(Contact::class, 'owner_id');
     }
 }

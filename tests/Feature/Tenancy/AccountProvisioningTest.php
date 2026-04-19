@@ -3,6 +3,7 @@
 use App\Models\Account;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Authorization\RolePermissionMatrix;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 
@@ -39,15 +40,31 @@ test('registration provisions a tenant account and owner membership', function (
 
     $adminRole = Role::query()
         ->where('account_id', $account->id)
-        ->where('slug', 'admin')
+        ->where('name', RolePermissionMatrix::AdministratorRole)
+        ->where('guard_name', 'web')
         ->first();
 
     expect($adminRole)->not->toBeNull();
 
-    $this->assertDatabaseHas('account_user_role', [
+    $this->assertDatabaseHas('model_has_roles', [
         'account_id' => $account->id,
-        'user_id' => $user->id,
         'role_id' => $adminRole->id,
+        'model_type' => User::class,
+        'model_id' => $user->id,
+    ]);
+
+    $this->assertDatabaseHas('permissions', [
+        'name' => 'deals.move',
+        'guard_name' => 'web',
+    ]);
+
+    $this->assertDatabaseHas('activity_log', [
+        'log_name' => 'auth',
+        'event' => 'registered',
+        'causer_type' => User::class,
+        'causer_id' => $user->id,
+        'subject_type' => User::class,
+        'subject_id' => $user->id,
     ]);
 });
 

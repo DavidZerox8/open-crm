@@ -6,30 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('pipelines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('slug');
-            $table->text('description')->nullable();
-            $table->boolean('is_system')->default(false);
+            $table->boolean('is_default')->default(false);
+            $table->unsignedSmallInteger('position')->default(0);
             $table->timestamps();
 
             $table->unique(['account_id', 'slug']);
-            $table->index(['account_id', 'name']);
+            $table->index(['account_id', 'position']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('pipelines');
     }
 };

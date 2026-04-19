@@ -3,7 +3,14 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
+    <body
+        class="min-h-screen bg-white dark:bg-zinc-800"
+        data-current-route-name="{{ request()->route()?->getName() ?? '' }}"
+        data-crm-tutorial-state-url="{{ route('crm.tutorial.state') }}"
+        data-crm-tutorial-update-url="{{ route('crm.tutorial.state.update') }}"
+        data-crm-tutorial-restart-url="{{ route('crm.tutorial.restart') }}"
+        data-crm-locale="{{ app()->getLocale() }}"
+    >
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
@@ -11,24 +18,32 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
+                <flux:sidebar.group :heading="__('crm.nav.crm')" class="grid" data-tour="crm-sidebar">
+                    <flux:sidebar.item icon="home" :href="route('crm.dashboard')" :current="request()->routeIs('crm.dashboard')" wire:navigate data-tour="crm-nav-dashboard">
+                        {{ __('crm.nav.dashboard') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-plus" :href="route('crm.leads.index')" :current="request()->routeIs('crm.leads.*')" wire:navigate data-tour="crm-nav-leads">
+                        {{ __('crm.nav.leads') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="building-office-2" :href="route('crm.companies.index')" :current="request()->routeIs('crm.companies.*')" wire:navigate data-tour="crm-nav-companies">
+                        {{ __('crm.nav.companies') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('crm.contacts.index')" :current="request()->routeIs('crm.contacts.*')" wire:navigate data-tour="crm-nav-contacts">
+                        {{ __('crm.nav.contacts') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="view-columns" :href="route('crm.pipeline.board')" :current="request()->routeIs('crm.pipeline.*')" wire:navigate data-tour="crm-nav-pipeline">
+                        {{ __('crm.nav.pipeline') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-check" :href="route('crm.tasks.index')" :current="request()->routeIs('crm.tasks.*')" wire:navigate data-tour="crm-nav-tasks">
+                        {{ __('crm.nav.tasks') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="chart-bar" :href="route('crm.reports.index')" :current="request()->routeIs('crm.reports.*')" wire:navigate data-tour="crm-nav-reports">
+                        {{ __('crm.nav.reports') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>

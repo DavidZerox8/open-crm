@@ -5,16 +5,19 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\Account;
-use App\Models\Role;
 use App\Models\User;
+use App\Support\Authorization\RolePermissionMatrix;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Spatie\Permission\PermissionRegistrar;
 
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules, ProfileValidationRules;
+
+    public function __construct(private readonly RolePermissionMatrix $rolePermissionMatrix) {}
 
     /**
      * Validate and create a newly registered user.
@@ -34,14 +37,6 @@ class CreateNewUser implements CreatesNewUsers
                 'slug' => $this->generateUniqueAccountSlug($input['name']),
             ]);
 
-            $role = Role::create([
-                'account_id' => $account->id,
-                'name' => 'Administrator',
-                'slug' => 'admin',
-                'description' => 'Full access within this account.',
-                'is_system' => true,
-            ]);
-
             $user = User::create([
                 'name' => $input['name'],
                 'email' => $input['email'],
@@ -50,7 +45,27 @@ class CreateNewUser implements CreatesNewUsers
             ]);
 
             $user->accounts()->attach($account->id, ['is_owner' => true]);
-            $user->roles()->attach($role->id, ['account_id' => $account->id]);
+
+            $permissionRegistrar = app(PermissionRegistrar::class);
+            $previousTeamId = $permissionRegistrar->getPermissionsTeamId();
+            $permissionRegistrar->setPermissionsTeamId($account->id);
+
+            try {
+                $this->rolePermissionMatrix->ensureRolesForAccount($account);
+                $user->assignRole($this->rolePermissionMatrix->ownerRoleName());
+            } finally {
+                $permissionRegistrar->setPermissionsTeamId($previousTeamId);
+            }
+
+            activity('auth')
+                ->causedBy($user)
+                ->performedOn($user)
+                ->event('registered')
+                ->withProperties([
+                    'account_id' => $account->id,
+                    'role' => $this->rolePermissionMatrix->ownerRoleName(),
+                ])
+                ->log('User registered and workspace provisioned');
 
             return $user;
         });

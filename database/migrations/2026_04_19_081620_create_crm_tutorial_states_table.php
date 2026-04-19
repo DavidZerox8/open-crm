@@ -11,13 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('account_user_role', function (Blueprint $table) {
+        Schema::create('crm_tutorial_states', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('account_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained()->cascadeOnDelete();
+            $table->string('tutorial_key');
+            $table->unsignedSmallInteger('tutorial_version')->default(1);
+            $table->json('completed_modules')->nullable();
+            $table->timestamp('dismissed_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['account_id', 'user_id', 'role_id']);
+            $table->unique(['account_id', 'user_id', 'tutorial_key']);
             $table->index(['user_id', 'account_id']);
         });
     }
@@ -27,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('account_user_role');
+        Schema::dropIfExists('crm_tutorial_states');
     }
 };
