@@ -3,7 +3,21 @@
 namespace App\Providers;
 
 use App\Listeners\LogAuthenticationActivity;
+use App\Models\CRM\Activity;
+use App\Models\CRM\Company;
+use App\Models\CRM\Contact;
+use App\Models\CRM\Deal;
+use App\Models\CRM\Lead;
+use App\Models\CRM\Pipeline;
+use App\Models\CRM\Task;
 use App\Models\User;
+use App\Policies\ActivityPolicy;
+use App\Policies\CompanyPolicy;
+use App\Policies\ContactPolicy;
+use App\Policies\DealPolicy;
+use App\Policies\LeadPolicy;
+use App\Policies\PipelinePolicy;
+use App\Policies\TaskPolicy;
 use App\Support\Authorization\RolePermissionMatrix;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -63,6 +77,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user): ?bool {
             return $user->hasRole(RolePermissionMatrix::AdministratorRole) ? true : null;
         });
+
+        Gate::policy(Company::class, CompanyPolicy::class);
+        Gate::policy(Contact::class, ContactPolicy::class);
+        Gate::policy(Lead::class, LeadPolicy::class);
+        Gate::policy(Deal::class, DealPolicy::class);
+        Gate::policy(Pipeline::class, PipelinePolicy::class);
+        Gate::policy(Activity::class, ActivityPolicy::class);
+        Gate::policy(Task::class, TaskPolicy::class);
     }
 
     /**

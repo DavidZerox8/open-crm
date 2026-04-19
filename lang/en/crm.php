@@ -47,9 +47,11 @@ return [
         'company' => 'Company',
         'contact' => 'Contact',
         'deal' => 'Deal',
+        'pipeline' => 'Pipeline',
         'stage' => 'Stage',
         'status' => 'Status',
         'priority' => 'Priority',
+        'assignee' => 'Assignee',
         'activity' => 'Activity',
         'task' => 'Task',
         'notes' => 'Notes',
@@ -140,6 +142,7 @@ return [
     'tasks' => [
         'title' => 'Tasks',
         'create' => 'New task',
+        'empty' => 'No tasks yet',
         'mark_complete' => 'Mark complete',
     ],
 
@@ -148,6 +151,12 @@ return [
         'funnel' => 'Conversion funnel',
         'activity_per_user' => 'Activity per user',
         'conversion_rate' => 'Conversion rate',
+        'kpi_conversion_rate' => 'Lead conversion',
+        'kpi_won_value' => 'Won value',
+        'kpi_open_value' => 'Open value',
+        'kpi_total_leads' => 'Total leads',
+        'funnel_by_stage' => 'Funnel by stage',
+        'activity_by_user' => 'Activity by user',
     ],
 
     'account' => [

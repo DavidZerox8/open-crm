@@ -40,5 +40,7 @@ class DatabaseSeeder extends Seeder
         $user->assignRole(app(RolePermissionMatrix::class)->ownerRoleName());
 
         $permissionRegistrar->setPermissionsTeamId($previousTeamId);
+
+        (new DemoCrmSeeder)->run($account, $user);
     }
 }

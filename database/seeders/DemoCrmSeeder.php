@@ -18,6 +18,7 @@ use App\Models\CRM\PipelineStage;
 use App\Models\CRM\Task;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class DemoCrmSeeder extends Seeder
@@ -102,9 +103,9 @@ class DemoCrmSeeder extends Seeder
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Company>
+     * @return Collection<int, Company>
      */
-    protected function createCompanies(Account $account, User $user, int $count): \Illuminate\Support\Collection
+    protected function createCompanies(Account $account, User $user, int $count): Collection
     {
         return Company::factory()
             ->count($count)
@@ -115,10 +116,10 @@ class DemoCrmSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Company>  $companies
-     * @return \Illuminate\Support\Collection<int, Contact>
+     * @param  Collection<int, Company>  $companies
+     * @return Collection<int, Contact>
      */
-    protected function createContacts(Account $account, User $user, \Illuminate\Support\Collection $companies, int $count): \Illuminate\Support\Collection
+    protected function createContacts(Account $account, User $user, Collection $companies, int $count): Collection
     {
         return Contact::factory()
             ->count($count)
@@ -149,11 +150,11 @@ class DemoCrmSeeder extends Seeder
 
     /**
      * @param  array<string, Pipeline>  $pipelines
-     * @param  \Illuminate\Support\Collection<int, Company>  $companies
-     * @param  \Illuminate\Support\Collection<int, Contact>  $contacts
-     * @return \Illuminate\Support\Collection<int, Deal>
+     * @param  Collection<int, Company>  $companies
+     * @param  Collection<int, Contact>  $contacts
+     * @return Collection<int, Deal>
      */
-    protected function createDeals(Account $account, User $user, array $pipelines, \Illuminate\Support\Collection $companies, \Illuminate\Support\Collection $contacts, int $count): \Illuminate\Support\Collection
+    protected function createDeals(Account $account, User $user, array $pipelines, Collection $companies, Collection $contacts, int $count): Collection
     {
         $ventas = $pipelines['ventas'];
         $stages = $ventas->stages()->get();
@@ -189,11 +190,11 @@ class DemoCrmSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Company>  $companies
-     * @param  \Illuminate\Support\Collection<int, Contact>  $contacts
-     * @param  \Illuminate\Support\Collection<int, Deal>  $deals
+     * @param  Collection<int, Company>  $companies
+     * @param  Collection<int, Contact>  $contacts
+     * @param  Collection<int, Deal>  $deals
      */
-    protected function createActivities(Account $account, User $user, \Illuminate\Support\Collection $companies, \Illuminate\Support\Collection $contacts, \Illuminate\Support\Collection $deals, int $count): void
+    protected function createActivities(Account $account, User $user, Collection $companies, Collection $contacts, Collection $deals, int $count): void
     {
         $subjects = collect()
             ->concat($companies->map(fn (Company $c) => [Company::class, $c->id]))
@@ -217,11 +218,11 @@ class DemoCrmSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Company>  $companies
-     * @param  \Illuminate\Support\Collection<int, Contact>  $contacts
-     * @param  \Illuminate\Support\Collection<int, Deal>  $deals
+     * @param  Collection<int, Company>  $companies
+     * @param  Collection<int, Contact>  $contacts
+     * @param  Collection<int, Deal>  $deals
      */
-    protected function createTasks(Account $account, User $user, \Illuminate\Support\Collection $companies, \Illuminate\Support\Collection $contacts, \Illuminate\Support\Collection $deals, int $count): void
+    protected function createTasks(Account $account, User $user, Collection $companies, Collection $contacts, Collection $deals, int $count): void
     {
         $subjects = collect()
             ->concat($companies->map(fn (Company $c) => [Company::class, $c->id]))

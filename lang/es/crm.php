@@ -47,9 +47,11 @@ return [
         'company' => 'Empresa',
         'contact' => 'Contacto',
         'deal' => 'Deal',
+        'pipeline' => 'Pipeline',
         'stage' => 'Etapa',
         'status' => 'Estado',
         'priority' => 'Prioridad',
+        'assignee' => 'Asignado a',
         'activity' => 'Actividad',
         'task' => 'Tarea',
         'notes' => 'Notas',
@@ -140,6 +142,7 @@ return [
     'tasks' => [
         'title' => 'Tareas',
         'create' => 'Nueva tarea',
+        'empty' => 'Sin tareas pendientes',
         'mark_complete' => 'Marcar como completada',
     ],
 
@@ -148,6 +151,12 @@ return [
         'funnel' => 'Embudo de conversion',
         'activity_per_user' => 'Actividad por usuario',
         'conversion_rate' => 'Tasa de conversion',
+        'kpi_conversion_rate' => 'Conversion de leads',
+        'kpi_won_value' => 'Valor ganado',
+        'kpi_open_value' => 'Valor abierto',
+        'kpi_total_leads' => 'Leads totales',
+        'funnel_by_stage' => 'Embudo por etapa',
+        'activity_by_user' => 'Actividad por usuario',
     ],
 
     'account' => [
