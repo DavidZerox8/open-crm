@@ -86,9 +86,15 @@ new #[Title('Companies')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header :title="__('crm.companies.title')" :subtitle="__('crm.labels.company')" data-tour="companies-header">
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item>{{ __('crm.nav.companies') }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 @can('create', \App\Models\CRM\Company::class)
                     <flux:button variant="primary" wire:click="$set('showCreateModal', true)" data-tour="companies-create">
@@ -184,4 +190,4 @@ new #[Title('Companies')] class extends Component {
             </div>
         </flux:modal>
     </div>
-</section>
+</div>

@@ -86,9 +86,16 @@ new #[Title('Reports')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.reports.title')" :subtitle="__('crm.dashboard.title')" data-tour="reports-header" />
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        <x-crm.entity-header :title="__('crm.reports.title')" :subtitle="__('crm.dashboard.title')" data-tour="reports-header">
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item>{{ __('crm.nav.reports') }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
+        </x-crm.entity-header>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="reports-kpis">
             <x-crm.stat-card :label="__('crm.reports.kpi_conversion_rate')" :value="$this->conversionRate . '%'" icon="arrows-right-left" />
@@ -98,7 +105,7 @@ new #[Title('Reports')] class extends Component {
         </div>
 
         <div class="grid gap-4 xl:grid-cols-5">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-funnel">
+            <article class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-3 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-funnel">
                 <flux:heading size="lg">{{ __('crm.reports.funnel_by_stage') }}</flux:heading>
 
                 @if ($this->stages->isEmpty())
@@ -127,9 +134,9 @@ new #[Title('Reports')] class extends Component {
                         </table>
                     </div>
                 @endif
-            </section>
+            </article>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-activity">
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="reports-activity">
                 <flux:heading size="lg">{{ __('crm.reports.activity_by_user') }}</flux:heading>
 
                 @if ($this->activityLeaders->isEmpty())
@@ -144,7 +151,7 @@ new #[Title('Reports')] class extends Component {
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </aside>
         </div>
     </div>
-</section>
+</div>

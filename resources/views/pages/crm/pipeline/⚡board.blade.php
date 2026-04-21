@@ -70,9 +70,16 @@ new #[Title('Pipeline')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 lg:p-6">
-        <x-crm.entity-header :title="__('crm.pipeline.title')" :subtitle="__('crm.deals.title')" data-tour="pipeline-header" />
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        <x-crm.entity-header :title="__('crm.pipeline.title')" :subtitle="__('crm.deals.title')" data-tour="pipeline-header">
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item>{{ __('crm.nav.pipeline') }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
+        </x-crm.entity-header>
 
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="pipeline-selector">
             <flux:field>
@@ -130,4 +137,4 @@ new #[Title('Pipeline')] class extends Component {
             </div>
         @endif
     </div>
-</section>
+</div>

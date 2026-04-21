@@ -106,13 +106,20 @@ new #[Title('Contact')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header
             :title="$contact->fullName()"
             :subtitle="$contact->job_title ?: __('crm.contacts.title')"
             data-tour="contact-header"
         >
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item href="{{ route('crm.contacts.index') }}" wire:navigate>{{ __('crm.nav.contacts') }}</flux:breadcrumbs.item>
+                    <flux:breadcrumbs.item>{{ $contact->fullName() }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 @if ($contact->company)
                     <flux:button :href="route('crm.companies.show', $contact->company)" variant="ghost" wire:navigate>
@@ -136,7 +143,7 @@ new #[Title('Contact')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-details">
+            <article class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-details">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -164,9 +171,9 @@ new #[Title('Contact')] class extends Component {
                         <flux:text class="mt-1">{{ $contact->notes }}</flux:text>
                     </div>
                 @endif
-            </section>
+            </article>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-deals">
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="contact-deals">
                 <flux:heading size="lg">{{ __('crm.deals.title') }}</flux:heading>
 
                 @if ($this->deals->isEmpty())
@@ -186,15 +193,15 @@ new #[Title('Contact')] class extends Component {
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </aside>
         </div>
 
-        <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+        <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('crm.dashboard.recent_activity') }}</flux:heading>
             <div class="mt-4">
                 <x-crm.activity-timeline :activities="$this->activities" />
             </div>
-        </section>
+        </aside>
     </div>
 
     <flux:modal wire:model="showEditModal" class="max-w-2xl">
@@ -241,4 +248,4 @@ new #[Title('Contact')] class extends Component {
             </div>
         </div>
     </flux:modal>
-</section>
+</div>

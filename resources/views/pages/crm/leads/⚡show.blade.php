@@ -150,8 +150,8 @@ new #[Title('Lead')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header
             :title="$lead->contact_name"
             :subtitle="$lead->company_name ?: __('crm.leads.title')"
@@ -159,6 +159,13 @@ new #[Title('Lead')] class extends Component {
             :badge-color="$lead->status->color()"
             data-tour="lead-header"
         >
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item href="{{ route('crm.leads.index') }}" wire:navigate>{{ __('crm.nav.leads') }}</flux:breadcrumbs.item>
+                    <flux:breadcrumbs.item>{{ $lead->contact_name }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 @can('convert', $lead)
                     <flux:button variant="primary" wire:click="convert" data-tour="lead-convert">
@@ -182,7 +189,7 @@ new #[Title('Lead')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-details">
+            <article class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-details">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -236,9 +243,9 @@ new #[Title('Lead')] class extends Component {
                         </div>
                     </div>
                 @endif
-            </section>
+            </article>
 
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+            <aside class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
 
                 @if ($this->tasks->isEmpty())
@@ -258,20 +265,20 @@ new #[Title('Lead')] class extends Component {
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </aside>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="mb-4 flex items-center justify-between">
                     <flux:heading size="lg">{{ __('crm.dashboard.recent_activity') }}</flux:heading>
                 </div>
 
                 <x-crm.activity-timeline :activities="$this->activities" />
-            </section>
+            </aside>
 
             @if (auth()->user()->can('activities.create'))
-                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-activity-form">
+                <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-activity-form">
                     <flux:heading size="lg">{{ __('crm.actions.log_activity') }}</flux:heading>
 
                     <form wire:submit="createActivity" class="mt-4 space-y-3">
@@ -291,7 +298,7 @@ new #[Title('Lead')] class extends Component {
                             <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
                         </div>
                     </form>
-                </section>
+                </aside>
             @endif
         </div>
     </div>
@@ -350,4 +357,4 @@ new #[Title('Lead')] class extends Component {
             </div>
         </div>
     </flux:modal>
-</section>
+</div>
