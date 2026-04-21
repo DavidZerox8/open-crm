@@ -1,6 +1,9 @@
 <?php
 
+use App\Actions\CRM\DeleteCompany;
+use App\Actions\CRM\UpdateCompany;
 use App\Models\CRM\Company;
+use Flux\Flux;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -10,6 +13,16 @@ new #[Title('Company')] class extends Component {
     use AuthorizesRequests;
 
     public Company $company;
+
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
+
+    public string $edit_name = '';
+    public string $edit_industry = '';
+    public string $edit_website = '';
+    public string $edit_email = '';
+    public string $edit_phone = '';
+    public string $edit_notes = '';
 
     public function mount(Company $company): void
     {
@@ -47,6 +60,56 @@ new #[Title('Company')] class extends Component {
             ->limit(20)
             ->get();
     }
+
+    public function editCompany(): void
+    {
+        $this->authorize('update', $this->company);
+
+        $this->edit_name = $this->company->name;
+        $this->edit_industry = $this->company->industry ?? '';
+        $this->edit_website = $this->company->website ?? '';
+        $this->edit_email = $this->company->email ?? '';
+        $this->edit_phone = $this->company->phone ?? '';
+        $this->edit_notes = $this->company->notes ?? '';
+
+        $this->showEditModal = true;
+    }
+
+    public function updateCompany(UpdateCompany $action): void
+    {
+        $this->authorize('update', $this->company);
+
+        $validated = $this->validate([
+            'edit_name' => ['required', 'string', 'max:255'],
+            'edit_industry' => ['nullable', 'string', 'max:255'],
+            'edit_website' => ['nullable', 'url', 'max:255'],
+            'edit_email' => ['nullable', 'email', 'max:255'],
+            'edit_phone' => ['nullable', 'string', 'max:50'],
+            'edit_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->company = $action->execute($this->company, [
+            'name' => $validated['edit_name'],
+            'industry' => $validated['edit_industry'] !== '' ? $validated['edit_industry'] : null,
+            'website' => $validated['edit_website'] !== '' ? $validated['edit_website'] : null,
+            'email' => $validated['edit_email'] !== '' ? $validated['edit_email'] : null,
+            'phone' => $validated['edit_phone'] !== '' ? $validated['edit_phone'] : null,
+            'notes' => $validated['edit_notes'] !== '' ? $validated['edit_notes'] : null,
+        ]);
+
+        $this->showEditModal = false;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.save'));
+    }
+
+    public function deleteCompany(DeleteCompany $action): void
+    {
+        $this->authorize('delete', $this->company);
+
+        $action->execute($this->company);
+
+        $this->redirectRoute('crm.companies.index', navigate: true);
+    }
 }; ?>
 
 <section class="w-full">
@@ -57,6 +120,16 @@ new #[Title('Company')] class extends Component {
             data-tour="company-header"
         >
             <x-slot:actions>
+                @can('update', $company)
+                    <flux:button variant="ghost" wire:click="editCompany">
+                        {{ __('crm.actions.edit') }}
+                    </flux:button>
+                @endcan
+                @can('delete', $company)
+                    <flux:button variant="ghost" class="text-red-500 hover:text-red-600" wire:click="$set('showDeleteModal', true)">
+                        {{ __('crm.actions.delete') }}
+                    </flux:button>
+                @endcan
                 <flux:button :href="route('crm.companies.index')" variant="ghost" wire:navigate>
                     {{ __('crm.nav.companies') }}
                 </flux:button>
@@ -143,4 +216,48 @@ new #[Title('Company')] class extends Component {
             </section>
         </div>
     </div>
+
+    <flux:modal wire:model="showEditModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.edit') }}</flux:heading>
+
+            <form wire:submit="updateCompany" class="space-y-4">
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_name" :label="__('crm.labels.company_name')" required />
+                    <flux:input wire:model="edit_industry" :label="__('crm.labels.industry')" />
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_email" :label="__('crm.labels.email')" type="email" />
+                    <flux:input wire:model="edit_phone" :label="__('crm.labels.phone')" />
+                </div>
+
+                <flux:input wire:model="edit_website" :label="__('crm.labels.website')" type="url" />
+
+                <flux:textarea wire:model="edit_notes" :label="__('crm.labels.notes')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showEditModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model="showDeleteModal" class="max-w-md">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.delete') }}</flux:heading>
+
+            <flux:text>{{ __('Are you sure you want to delete this company? This action cannot be undone.') }}</flux:text>
+
+            <div class="flex justify-end gap-2">
+                <flux:button type="button" variant="ghost" wire:click="$set('showDeleteModal', false)">
+                    {{ __('crm.actions.cancel') }}
+                </flux:button>
+                <flux:button variant="danger" wire:click="deleteCompany">{{ __('crm.actions.delete') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </section>

@@ -2,6 +2,8 @@
 
 use App\Actions\CRM\CompleteTask;
 use App\Actions\CRM\CreateTask;
+use App\Actions\CRM\DeleteTask;
+use App\Actions\CRM\UpdateTask;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\CRM\Task;
@@ -23,12 +25,24 @@ new #[Title('Tasks')] class extends Component {
     public string $status = '';
     public string $priority = '';
     public bool $showCreateModal = false;
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
 
     public string $title = '';
     public string $description = '';
     public string $task_priority = 'medium';
     public ?int $assigned_to = null;
     public string $due_at = '';
+
+    public ?int $edit_task_id = null;
+    public string $edit_title = '';
+    public string $edit_description = '';
+    public string $edit_task_status = 'pending';
+    public string $edit_task_priority = 'medium';
+    public ?int $edit_assigned_to = null;
+    public string $edit_due_at = '';
+
+    public ?int $delete_task_id = null;
 
     public function mount(): void
     {
@@ -112,6 +126,72 @@ new #[Title('Tasks')] class extends Component {
 
         Flux::toast(text: __('crm.actions.complete'));
     }
+
+    public function editTask(int $taskId): void
+    {
+        $task = Task::query()->findOrFail($taskId);
+        $this->authorize('update', $task);
+
+        $this->edit_task_id = $task->id;
+        $this->edit_title = $task->title;
+        $this->edit_description = $task->description ?? '';
+        $this->edit_task_status = $task->status->value;
+        $this->edit_task_priority = $task->priority->value;
+        $this->edit_assigned_to = $task->assignee_id;
+        $this->edit_due_at = $task->due_at ? $task->due_at->format('Y-m-d\TH:i') : '';
+
+        $this->showEditModal = true;
+    }
+
+    public function updateTask(UpdateTask $action): void
+    {
+        $task = Task::query()->findOrFail($this->edit_task_id);
+        $this->authorize('update', $task);
+
+        $validated = $this->validate([
+            'edit_title' => ['required', 'string', 'max:255'],
+            'edit_description' => ['nullable', 'string', 'max:2000'],
+            'edit_task_status' => ['required', 'in:'.implode(',', TaskStatus::values())],
+            'edit_task_priority' => ['required', 'in:'.implode(',', TaskPriority::values())],
+            'edit_assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'edit_due_at' => ['nullable', 'date'],
+        ]);
+
+        $action->execute($task, [
+            'title' => $validated['edit_title'],
+            'description' => $validated['edit_description'] !== '' ? $validated['edit_description'] : null,
+            'status' => TaskStatus::from($validated['edit_task_status']),
+            'priority' => TaskPriority::from($validated['edit_task_priority']),
+            'assigned_to' => $validated['edit_assigned_to'],
+            'due_at' => $validated['edit_due_at'] !== '' ? Carbon::parse($validated['edit_due_at']) : null,
+        ]);
+
+        $this->showEditModal = false;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.save'));
+    }
+
+    public function confirmDelete(int $taskId): void
+    {
+        $task = Task::query()->findOrFail($taskId);
+        $this->authorize('delete', $task);
+
+        $this->delete_task_id = $task->id;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteTask(DeleteTask $action): void
+    {
+        $task = Task::query()->findOrFail($this->delete_task_id);
+        $this->authorize('delete', $task);
+
+        $action->execute($task);
+
+        $this->showDeleteModal = false;
+        $this->delete_task_id = null;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.delete'));
+    }
 }; ?>
 
 <section class="w-full">
@@ -183,13 +263,28 @@ new #[Title('Tasks')] class extends Component {
                                 <td class="px-4 py-3">{{ $task->assignee?->name ?: '—' }}</td>
                                 <td class="px-4 py-3">{{ $task->due_at?->format('d/m/Y H:i') ?: '—' }}</td>
                                 <td class="px-4 py-3 text-right">
-                                    @if ($task->status === \App\Enums\TaskStatus::Pending)
-                                        @can('complete', $task)
-                                            <flux:button size="sm" variant="ghost" wire:click="completeTask({{ $task->id }})">
-                                                {{ __('crm.actions.complete') }}
-                                            </flux:button>
-                                        @endcan
-                                    @endif
+                                    <flux:dropdown>
+                                        <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+                                        <flux:menu align="end">
+                                            @if ($task->status === \App\Enums\TaskStatus::Pending)
+                                                @can('complete', $task)
+                                                    <flux:menu.item wire:click="completeTask({{ $task->id }})">
+                                                        {{ __('crm.actions.complete') }}
+                                                    </flux:menu.item>
+                                                @endcan
+                                            @endif
+                                            @can('update', $task)
+                                                <flux:menu.item wire:click="editTask({{ $task->id }})">
+                                                    {{ __('crm.actions.edit') }}
+                                                </flux:menu.item>
+                                            @endcan
+                                            @can('delete', $task)
+                                                <flux:menu.item wire:click="confirmDelete({{ $task->id }})" class="text-red-500 hover:text-red-600">
+                                                    {{ __('crm.actions.delete') }}
+                                                </flux:menu.item>
+                                            @endcan
+                                        </flux:menu>
+                                    </flux:dropdown>
                                 </td>
                             </tr>
                         @endforeach
@@ -240,6 +335,70 @@ new #[Title('Tasks')] class extends Component {
                         <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
                     </div>
                 </form>
+            </div>
+        </flux:modal>
+        <flux:modal wire:model="showEditModal" class="max-w-2xl">
+            <div class="space-y-4">
+                <flux:heading>{{ __('crm.actions.edit') }}</flux:heading>
+
+                <form wire:submit="updateTask" class="space-y-4">
+                    <flux:input wire:model="edit_title" :label="__('crm.labels.title')" required />
+                    <flux:textarea wire:model="edit_description" :label="__('crm.labels.description')" rows="3" />
+
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                        <flux:field>
+                            <flux:label>{{ __('crm.labels.status') }}</flux:label>
+                            <flux:select wire:model="edit_task_status">
+                                @foreach (\App\Enums\TaskStatus::cases() as $taskStatus)
+                                    <option value="{{ $taskStatus->value }}">{{ $taskStatus->label() }}</option>
+                                @endforeach
+                            </flux:select>
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>{{ __('crm.labels.priority') }}</flux:label>
+                            <flux:select wire:model="edit_task_priority">
+                                @foreach (\App\Enums\TaskPriority::cases() as $taskPriority)
+                                    <option value="{{ $taskPriority->value }}">{{ $taskPriority->label() }}</option>
+                                @endforeach
+                            </flux:select>
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>{{ __('crm.labels.assignee') }}</flux:label>
+                            <flux:select wire:model="edit_assigned_to">
+                                <option value="">—</option>
+                                @foreach ($this->users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </flux:select>
+                        </flux:field>
+
+                        <flux:input wire:model="edit_due_at" :label="__('crm.labels.due_at')" type="datetime-local" />
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <flux:button type="button" variant="ghost" wire:click="$set('showEditModal', false)">
+                            {{ __('crm.actions.cancel') }}
+                        </flux:button>
+                        <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                    </div>
+                </form>
+            </div>
+        </flux:modal>
+
+        <flux:modal wire:model="showDeleteModal" class="max-w-md">
+            <div class="space-y-4">
+                <flux:heading>{{ __('crm.actions.delete') }}</flux:heading>
+
+                <flux:text>{{ __('Are you sure you want to delete this task? This action cannot be undone.') }}</flux:text>
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showDeleteModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button variant="danger" wire:click="deleteTask">{{ __('crm.actions.delete') }}</flux:button>
+                </div>
             </div>
         </flux:modal>
     </div>

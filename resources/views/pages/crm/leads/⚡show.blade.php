@@ -2,7 +2,10 @@
 
 use App\Actions\CRM\ConvertLead;
 use App\Actions\CRM\LogActivity;
+use App\Actions\CRM\DeleteLead;
+use App\Actions\CRM\UpdateLead;
 use App\Enums\ActivityType;
+use App\Enums\LeadStatus;
 use App\Models\CRM\Lead;
 use Flux\Flux;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -15,6 +18,18 @@ new #[Title('Lead')] class extends Component {
     use AuthorizesRequests;
 
     public Lead $lead;
+
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
+
+    public string $edit_contact_name = '';
+    public string $edit_company_name = '';
+    public string $edit_email = '';
+    public string $edit_phone = '';
+    public string $edit_source = '';
+    public string $edit_lead_status = '';
+    public int $edit_score = 0;
+    public string $edit_notes = '';
 
     public string $activity_type = 'note';
     public string $activity_title = '';
@@ -77,6 +92,62 @@ new #[Title('Lead')] class extends Component {
 
         Flux::toast(text: __('crm.actions.log_activity'));
     }
+
+    public function editLead(): void
+    {
+        $this->authorize('update', $this->lead);
+
+        $this->edit_contact_name = $this->lead->contact_name;
+        $this->edit_company_name = $this->lead->company_name ?? '';
+        $this->edit_email = $this->lead->email ?? '';
+        $this->edit_phone = $this->lead->phone ?? '';
+        $this->edit_source = $this->lead->source ?? '';
+        $this->edit_lead_status = $this->lead->status->value;
+        $this->edit_score = $this->lead->score;
+        $this->edit_notes = $this->lead->notes ?? '';
+
+        $this->showEditModal = true;
+    }
+
+    public function updateLead(UpdateLead $action): void
+    {
+        $this->authorize('update', $this->lead);
+
+        $validated = $this->validate([
+            'edit_contact_name' => ['required', 'string', 'max:255'],
+            'edit_company_name' => ['nullable', 'string', 'max:255'],
+            'edit_email' => ['nullable', 'email', 'max:255'],
+            'edit_phone' => ['nullable', 'string', 'max:50'],
+            'edit_source' => ['nullable', 'string', 'max:100'],
+            'edit_lead_status' => ['required', 'in:'.implode(',', LeadStatus::values())],
+            'edit_score' => ['required', 'integer', 'min:0', 'max:100'],
+            'edit_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->lead = $action->execute($this->lead, [
+            'contact_name' => $validated['edit_contact_name'],
+            'company_name' => $validated['edit_company_name'] !== '' ? $validated['edit_company_name'] : null,
+            'email' => $validated['edit_email'] !== '' ? $validated['edit_email'] : null,
+            'phone' => $validated['edit_phone'] !== '' ? $validated['edit_phone'] : null,
+            'source' => $validated['edit_source'] !== '' ? $validated['edit_source'] : null,
+            'status' => LeadStatus::from($validated['edit_lead_status']),
+            'score' => $validated['edit_score'],
+            'notes' => $validated['edit_notes'] !== '' ? $validated['edit_notes'] : null,
+        ]);
+
+        $this->showEditModal = false;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.save'));
+    }
+
+    public function deleteLead(DeleteLead $action): void
+    {
+        $this->authorize('delete', $this->lead);
+
+        $action->execute($this->lead);
+
+        $this->redirectRoute('crm.leads.index', navigate: true);
+    }
 }; ?>
 
 <section class="w-full">
@@ -92,6 +163,16 @@ new #[Title('Lead')] class extends Component {
                 @can('convert', $lead)
                     <flux:button variant="primary" wire:click="convert" data-tour="lead-convert">
                         {{ __('crm.actions.convert') }}
+                    </flux:button>
+                @endcan
+                @can('update', $lead)
+                    <flux:button variant="ghost" wire:click="editLead">
+                        {{ __('crm.actions.edit') }}
+                    </flux:button>
+                @endcan
+                @can('delete', $lead)
+                    <flux:button variant="ghost" class="text-red-500 hover:text-red-600" wire:click="$set('showDeleteModal', true)">
+                        {{ __('crm.actions.delete') }}
                     </flux:button>
                 @endcan
                 <flux:button :href="route('crm.leads.index')" variant="ghost" wire:navigate>
@@ -214,4 +295,59 @@ new #[Title('Lead')] class extends Component {
             @endif
         </div>
     </div>
+
+    <flux:modal wire:model="showEditModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.edit') }}</flux:heading>
+
+            <form wire:submit="updateLead" class="space-y-4">
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_contact_name" :label="__('crm.labels.contact_name')" required />
+                    <flux:input wire:model="edit_company_name" :label="__('crm.labels.company_name')" />
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_email" :label="__('crm.labels.email')" type="email" />
+                    <flux:input wire:model="edit_phone" :label="__('crm.labels.phone')" />
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-3">
+                    <flux:input wire:model="edit_source" :label="__('crm.labels.source')" />
+                    <flux:field>
+                        <flux:label>{{ __('crm.labels.status') }}</flux:label>
+                        <flux:select wire:model="edit_lead_status">
+                            @foreach (\App\Enums\LeadStatus::cases() as $leadStatus)
+                                <option value="{{ $leadStatus->value }}">{{ $leadStatus->label() }}</option>
+                            @endforeach
+                        </flux:select>
+                    </flux:field>
+                    <flux:input wire:model="edit_score" :label="__('crm.labels.score')" type="number" min="0" max="100" />
+                </div>
+
+                <flux:textarea wire:model="edit_notes" :label="__('crm.labels.notes')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showEditModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model="showDeleteModal" class="max-w-md">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.delete') }}</flux:heading>
+
+            <flux:text>{{ __('Are you sure you want to delete this lead? This action cannot be undone.') }}</flux:text>
+
+            <div class="flex justify-end gap-2">
+                <flux:button type="button" variant="ghost" wire:click="$set('showDeleteModal', false)">
+                    {{ __('crm.actions.cancel') }}
+                </flux:button>
+                <flux:button variant="danger" wire:click="deleteLead">{{ __('crm.actions.delete') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </section>
