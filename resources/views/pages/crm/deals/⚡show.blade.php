@@ -3,6 +3,8 @@
 use App\Actions\CRM\CloseDeal;
 use App\Actions\CRM\LogActivity;
 use App\Actions\CRM\MoveDealStage;
+use App\Actions\CRM\DeleteDeal;
+use App\Actions\CRM\UpdateDeal;
 use App\Enums\ActivityType;
 use App\Enums\DealStatus;
 use App\Models\CRM\Deal;
@@ -21,6 +23,14 @@ new #[Title('Deal')] class extends Component {
 
     public ?int $stage_id = null;
     public string $lost_reason = '';
+
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
+
+    public string $edit_title = '';
+    public string $edit_amount = '';
+    public string $edit_currency = '';
+    public string $edit_description = '';
 
     public string $activity_type = 'note';
     public string $activity_title = '';
@@ -129,6 +139,50 @@ new #[Title('Deal')] class extends Component {
 
         Flux::toast(text: __('crm.actions.log_activity'));
     }
+
+    public function editDeal(): void
+    {
+        $this->authorize('update', $this->deal);
+
+        $this->edit_title = $this->deal->title;
+        $this->edit_amount = (string) $this->deal->amount;
+        $this->edit_currency = $this->deal->currency;
+        $this->edit_description = $this->deal->description ?? '';
+
+        $this->showEditModal = true;
+    }
+
+    public function updateDeal(UpdateDeal $action): void
+    {
+        $this->authorize('update', $this->deal);
+
+        $validated = $this->validate([
+            'edit_title' => ['required', 'string', 'max:255'],
+            'edit_amount' => ['required', 'numeric', 'min:0'],
+            'edit_currency' => ['required', 'string', 'max:3'],
+            'edit_description' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->deal = $action->execute($this->deal, [
+            'title' => $validated['edit_title'],
+            'amount' => $validated['edit_amount'],
+            'currency' => $validated['edit_currency'],
+            'description' => $validated['edit_description'] !== '' ? $validated['edit_description'] : null,
+        ]);
+
+        $this->showEditModal = false;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.save'));
+    }
+
+    public function deleteDeal(DeleteDeal $action): void
+    {
+        $this->authorize('delete', $this->deal);
+
+        $action->execute($this->deal);
+
+        $this->redirectRoute('crm.pipeline.board', navigate: true);
+    }
 }; ?>
 
 <section class="w-full">
@@ -141,6 +195,16 @@ new #[Title('Deal')] class extends Component {
             data-tour="deal-header"
         >
             <x-slot:actions>
+                @can('update', $deal)
+                    <flux:button variant="ghost" wire:click="editDeal">
+                        {{ __('crm.actions.edit') }}
+                    </flux:button>
+                @endcan
+                @can('delete', $deal)
+                    <flux:button variant="ghost" class="text-red-500 hover:text-red-600" wire:click="$set('showDeleteModal', true)">
+                        {{ __('crm.actions.delete') }}
+                    </flux:button>
+                @endcan
                 <flux:button :href="route('crm.pipeline.board')" variant="ghost" wire:navigate>
                     {{ __('crm.nav.pipeline') }}
                 </flux:button>
@@ -280,4 +344,43 @@ new #[Title('Deal')] class extends Component {
             @endif
         </div>
     </div>
+
+    <flux:modal wire:model="showEditModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.edit') }}</flux:heading>
+
+            <form wire:submit="updateDeal" class="space-y-4">
+                <flux:input wire:model="edit_title" :label="__('crm.labels.title')" required />
+
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_amount" :label="__('crm.labels.amount')" type="number" step="0.01" min="0" required />
+                    <flux:input wire:model="edit_currency" :label="__('crm.labels.currency')" required />
+                </div>
+
+                <flux:textarea wire:model="edit_description" :label="__('crm.labels.description')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showEditModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model="showDeleteModal" class="max-w-md">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.delete') }}</flux:heading>
+
+            <flux:text>{{ __('Are you sure you want to delete this deal? This action cannot be undone.') }}</flux:text>
+
+            <div class="flex justify-end gap-2">
+                <flux:button type="button" variant="ghost" wire:click="$set('showDeleteModal', false)">
+                    {{ __('crm.actions.cancel') }}
+                </flux:button>
+                <flux:button variant="danger" wire:click="deleteDeal">{{ __('crm.actions.delete') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </section>

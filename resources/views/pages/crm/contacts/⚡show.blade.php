@@ -1,6 +1,9 @@
 <?php
 
+use App\Actions\CRM\DeleteContact;
+use App\Actions\CRM\UpdateContact;
 use App\Models\CRM\Contact;
+use Flux\Flux;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -10,6 +13,17 @@ new #[Title('Contact')] class extends Component {
     use AuthorizesRequests;
 
     public Contact $contact;
+
+    public bool $showEditModal = false;
+    public bool $showDeleteModal = false;
+
+    public string $edit_first_name = '';
+    public string $edit_last_name = '';
+    public string $edit_job_title = '';
+    public string $edit_email = '';
+    public string $edit_phone = '';
+    public string $edit_mobile = '';
+    public string $edit_notes = '';
 
     public function mount(Contact $contact): void
     {
@@ -37,6 +51,59 @@ new #[Title('Contact')] class extends Component {
             ->limit(20)
             ->get();
     }
+
+    public function editContact(): void
+    {
+        $this->authorize('update', $this->contact);
+
+        $this->edit_first_name = $this->contact->first_name;
+        $this->edit_last_name = $this->contact->last_name ?? '';
+        $this->edit_job_title = $this->contact->job_title ?? '';
+        $this->edit_email = $this->contact->email ?? '';
+        $this->edit_phone = $this->contact->phone ?? '';
+        $this->edit_mobile = $this->contact->mobile ?? '';
+        $this->edit_notes = $this->contact->notes ?? '';
+
+        $this->showEditModal = true;
+    }
+
+    public function updateContact(UpdateContact $action): void
+    {
+        $this->authorize('update', $this->contact);
+
+        $validated = $this->validate([
+            'edit_first_name' => ['required', 'string', 'max:255'],
+            'edit_last_name' => ['nullable', 'string', 'max:255'],
+            'edit_job_title' => ['nullable', 'string', 'max:255'],
+            'edit_email' => ['nullable', 'email', 'max:255'],
+            'edit_phone' => ['nullable', 'string', 'max:50'],
+            'edit_mobile' => ['nullable', 'string', 'max:50'],
+            'edit_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->contact = $action->execute($this->contact, [
+            'first_name' => $validated['edit_first_name'],
+            'last_name' => $validated['edit_last_name'] !== '' ? $validated['edit_last_name'] : null,
+            'job_title' => $validated['edit_job_title'] !== '' ? $validated['edit_job_title'] : null,
+            'email' => $validated['edit_email'] !== '' ? $validated['edit_email'] : null,
+            'phone' => $validated['edit_phone'] !== '' ? $validated['edit_phone'] : null,
+            'mobile' => $validated['edit_mobile'] !== '' ? $validated['edit_mobile'] : null,
+            'notes' => $validated['edit_notes'] !== '' ? $validated['edit_notes'] : null,
+        ]);
+
+        $this->showEditModal = false;
+
+        Flux::toast(variant: 'success', text: __('crm.actions.save'));
+    }
+
+    public function deleteContact(DeleteContact $action): void
+    {
+        $this->authorize('delete', $this->contact);
+
+        $action->execute($this->contact);
+
+        $this->redirectRoute('crm.contacts.index', navigate: true);
+    }
 }; ?>
 
 <section class="w-full">
@@ -52,6 +119,16 @@ new #[Title('Contact')] class extends Component {
                         {{ __('crm.labels.company') }}
                     </flux:button>
                 @endif
+                @can('update', $contact)
+                    <flux:button variant="ghost" wire:click="editContact">
+                        {{ __('crm.actions.edit') }}
+                    </flux:button>
+                @endcan
+                @can('delete', $contact)
+                    <flux:button variant="ghost" class="text-red-500 hover:text-red-600" wire:click="$set('showDeleteModal', true)">
+                        {{ __('crm.actions.delete') }}
+                    </flux:button>
+                @endcan
                 <flux:button :href="route('crm.contacts.index')" variant="ghost" wire:navigate>
                     {{ __('crm.nav.contacts') }}
                 </flux:button>
@@ -119,4 +196,49 @@ new #[Title('Contact')] class extends Component {
             </div>
         </section>
     </div>
+
+    <flux:modal wire:model="showEditModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.edit') }}</flux:heading>
+
+            <form wire:submit="updateContact" class="space-y-4">
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="edit_first_name" :label="__('crm.labels.first_name')" required />
+                    <flux:input wire:model="edit_last_name" :label="__('crm.labels.last_name')" />
+                </div>
+
+                <flux:input wire:model="edit_job_title" :label="__('crm.labels.job_title')" />
+
+                <div class="grid gap-3 md:grid-cols-3">
+                    <flux:input wire:model="edit_email" :label="__('crm.labels.email')" type="email" />
+                    <flux:input wire:model="edit_phone" :label="__('crm.labels.phone')" />
+                    <flux:input wire:model="edit_mobile" :label="__('crm.labels.mobile')" />
+                </div>
+
+                <flux:textarea wire:model="edit_notes" :label="__('crm.labels.notes')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showEditModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model="showDeleteModal" class="max-w-md">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.delete') }}</flux:heading>
+
+            <flux:text>{{ __('Are you sure you want to delete this contact? This action cannot be undone.') }}</flux:text>
+
+            <div class="flex justify-end gap-2">
+                <flux:button type="button" variant="ghost" wire:click="$set('showDeleteModal', false)">
+                    {{ __('crm.actions.cancel') }}
+                </flux:button>
+                <flux:button variant="danger" wire:click="deleteContact">{{ __('crm.actions.delete') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </section>
