@@ -22,24 +22,32 @@ class ConvertLead
         return DB::transaction(function () use ($user, $lead, $overrides) {
             $company = null;
 
-            if (! empty($lead->company_name)) {
+            if (! empty($overrides['existing_company_id'])) {
+                $company = Company::where('account_id', $lead->account_id)
+                    ->findOrFail($overrides['existing_company_id']);
+            } elseif (! empty($lead->company_name)) {
                 $company = Company::firstOrCreate(
                     ['account_id' => $lead->account_id, 'name' => $lead->company_name],
                     ['owner_id' => $lead->owner_id ?? $user->id],
                 );
             }
 
-            [$firstName, $lastName] = $this->splitName($lead->contact_name);
+            if (! empty($overrides['existing_contact_id'])) {
+                $contact = Contact::where('account_id', $lead->account_id)
+                    ->findOrFail($overrides['existing_contact_id']);
+            } else {
+                [$firstName, $lastName] = $this->splitName($lead->contact_name);
 
-            $contact = Contact::create([
-                'account_id' => $lead->account_id,
-                'company_id' => $company?->id,
-                'owner_id' => $lead->owner_id ?? $user->id,
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $lead->email,
-                'phone' => $lead->phone,
-            ]);
+                $contact = Contact::create([
+                    'account_id' => $lead->account_id,
+                    'company_id' => $company?->id,
+                    'owner_id' => $lead->owner_id ?? $user->id,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $lead->email,
+                    'phone' => $lead->phone,
+                ]);
+            }
 
             $pipeline = Pipeline::where('account_id', $lead->account_id)
                 ->orderByDesc('is_default')

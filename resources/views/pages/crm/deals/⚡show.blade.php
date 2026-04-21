@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\CRM\CloseDeal;
+use App\Actions\CRM\CreateTask;
 use App\Actions\CRM\LogActivity;
 use App\Actions\CRM\MoveDealStage;
 use App\Actions\CRM\DeleteDeal;
@@ -26,11 +27,17 @@ new #[Title('Deal')] class extends Component {
 
     public bool $showEditModal = false;
     public bool $showDeleteModal = false;
+    public bool $showCreateTaskModal = false;
 
     public string $edit_title = '';
     public string $edit_amount = '';
     public string $edit_currency = '';
     public string $edit_description = '';
+
+    public string $task_title = '';
+    public string $task_description = '';
+    public ?string $task_due_at = null;
+    public string $task_priority = 'medium';
 
     public string $activity_type = 'note';
     public string $activity_title = '';
@@ -183,10 +190,37 @@ new #[Title('Deal')] class extends Component {
 
         $this->redirectRoute('crm.pipeline.board', navigate: true);
     }
+
+    public function createTask(CreateTask $action): void
+    {
+        $this->authorize('create', \App\Models\CRM\Task::class);
+
+        $validated = $this->validate([
+            'task_title' => ['required', 'string', 'max:255'],
+            'task_description' => ['nullable', 'string', 'max:2000'],
+            'task_due_at' => ['nullable', 'date'],
+            'task_priority' => ['required', 'string'],
+        ]);
+
+        $action->execute(auth()->user(), [
+            'title' => $validated['task_title'],
+            'description' => $validated['task_description'] !== '' ? $validated['task_description'] : null,
+            'due_at' => $validated['task_due_at'] !== '' ? $validated['task_due_at'] : null,
+            'priority' => \App\Enums\TaskPriority::from($validated['task_priority']),
+            'assigned_to' => auth()->user()->id,
+        ], $this->deal);
+
+        $this->reset([
+            'task_title', 'task_description', 'task_due_at', 'task_priority', 'showCreateTaskModal'
+        ]);
+        $this->task_priority = 'medium';
+
+        Flux::toast(variant: 'success', text: __('crm.tasks.create'));
+    }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header
             :title="$deal->title"
             :subtitle="$deal->company?->name ?: __('crm.deals.title')"
@@ -194,6 +228,13 @@ new #[Title('Deal')] class extends Component {
             :badge-color="$deal->status->color()"
             data-tour="deal-header"
         >
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item href="{{ route('crm.pipeline.board') }}" wire:navigate>{{ __('crm.nav.pipeline') }}</flux:breadcrumbs.item>
+                    <flux:breadcrumbs.item>{{ $deal->title }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 @can('update', $deal)
                     <flux:button variant="ghost" wire:click="editDeal">
@@ -215,7 +256,7 @@ new #[Title('Deal')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <article class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('crm.labels.deal') }}</flux:heading>
 
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -286,10 +327,15 @@ new #[Title('Deal')] class extends Component {
                         @endcan
                     </div>
                 @endif
-            </section>
+            </article>
 
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-tasks">
-                <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-tasks">
+                <div class="mb-3 flex items-center justify-between gap-2">
+                    <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
+                    @can('create', \App\Models\CRM\Task::class)
+                        <flux:button size="sm" variant="ghost" icon="plus" class="h-8 w-8 !p-0" wire:click="$set('showCreateTaskModal', true)" />
+                    @endcan
+                </div>
 
                 @if ($this->tasks->isEmpty())
                     <x-crm.empty-state icon="clipboard-document" :heading="__('crm.tasks.title')" :subheading="__('crm.tasks.create')" class="mt-4 py-8" />
@@ -308,19 +354,19 @@ new #[Title('Deal')] class extends Component {
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </aside>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('crm.dashboard.recent_activity') }}</flux:heading>
                 <div class="mt-4">
                     <x-crm.activity-timeline :activities="$this->activities" />
                 </div>
-            </section>
+            </aside>
 
             @if (auth()->user()->can('activities.create'))
-                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-activity-form">
+                <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="deal-activity-form">
                     <flux:heading size="lg">{{ __('crm.actions.log_activity') }}</flux:heading>
 
                     <form wire:submit="createActivity" class="mt-4 space-y-3">
@@ -340,7 +386,7 @@ new #[Title('Deal')] class extends Component {
                             <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
                         </div>
                     </form>
-                </section>
+                </aside>
             @endif
         </div>
     </div>
@@ -383,4 +429,35 @@ new #[Title('Deal')] class extends Component {
             </div>
         </div>
     </flux:modal>
-</section>
+
+    <flux:modal wire:model="showCreateTaskModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.tasks.create') }}</flux:heading>
+
+            <form wire:submit="createTask" class="space-y-4">
+                <flux:input wire:model="task_title" :label="__('crm.labels.title')" required />
+
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="task_due_at" :label="__('crm.labels.due_at')" type="datetime-local" />
+                    <flux:field>
+                        <flux:label>{{ __('crm.labels.priority') }}</flux:label>
+                        <flux:select wire:model="task_priority" required>
+                            @foreach (\App\Enums\TaskPriority::cases() as $priority)
+                                <option value="{{ $priority->value }}">{{ $priority->label() }}</option>
+                            @endforeach
+                        </flux:select>
+                    </flux:field>
+                </div>
+
+                <flux:textarea wire:model="task_description" :label="__('crm.labels.description')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showCreateTaskModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+</div>

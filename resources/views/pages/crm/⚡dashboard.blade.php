@@ -73,13 +73,19 @@ new #[Title('CRM Dashboard')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header
             :title="__('crm.dashboard.title')"
             :subtitle="__('crm.dashboard.recent_activity')"
             data-tour="dashboard-header"
         >
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item>{{ __('crm.nav.dashboard') }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 <flux:button :href="route('crm.leads.index')" variant="primary" wire:navigate>
                     {{ __('crm.leads.create') }}
@@ -159,4 +165,4 @@ new #[Title('CRM Dashboard')] class extends Component {
             </section>
         </div>
     </div>
-</section>
+</div>

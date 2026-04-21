@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\CRM\ConvertLead;
+use App\Actions\CRM\CreateTask;
 use App\Actions\CRM\LogActivity;
 use App\Actions\CRM\DeleteLead;
 use App\Actions\CRM\UpdateLead;
@@ -21,6 +22,11 @@ new #[Title('Lead')] class extends Component {
 
     public bool $showEditModal = false;
     public bool $showDeleteModal = false;
+    public bool $showCreateTaskModal = false;
+    public bool $showConvertModal = false;
+
+    public ?int $convert_company_id = null;
+    public ?int $convert_contact_id = null;
 
     public string $edit_contact_name = '';
     public string $edit_company_name = '';
@@ -30,6 +36,11 @@ new #[Title('Lead')] class extends Component {
     public string $edit_lead_status = '';
     public int $edit_score = 0;
     public string $edit_notes = '';
+
+    public string $task_title = '';
+    public string $task_description = '';
+    public ?string $task_due_at = null;
+    public string $task_priority = 'medium';
 
     public string $activity_type = 'note';
     public string $activity_title = '';
@@ -62,11 +73,37 @@ new #[Title('Lead')] class extends Component {
             ->get();
     }
 
+    #[Computed]
+    public function companies(): \Illuminate\Database\Eloquent\Collection
+    {
+        return \App\Models\CRM\Company::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    #[Computed]
+    public function contacts(): \Illuminate\Database\Eloquent\Collection
+    {
+        return \App\Models\CRM\Contact::query()
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+    }
+
     public function convert(ConvertLead $action): void
     {
         $this->authorize('convert', $this->lead);
 
-        $this->lead = $action->execute(Auth::user(), $this->lead);
+        $validated = $this->validate([
+            'convert_company_id' => ['nullable', 'integer', 'exists:companies,id'],
+            'convert_contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
+        ]);
+
+        $this->lead = $action->execute(Auth::user(), $this->lead, [
+            'existing_company_id' => $validated['convert_company_id'],
+            'existing_contact_id' => $validated['convert_contact_id'],
+        ]);
+
+        $this->showConvertModal = false;
 
         Flux::toast(variant: 'success', text: __('crm.actions.convert'));
     }
@@ -148,10 +185,37 @@ new #[Title('Lead')] class extends Component {
 
         $this->redirectRoute('crm.leads.index', navigate: true);
     }
+
+    public function createTask(CreateTask $action): void
+    {
+        $this->authorize('create', \App\Models\CRM\Task::class);
+
+        $validated = $this->validate([
+            'task_title' => ['required', 'string', 'max:255'],
+            'task_description' => ['nullable', 'string', 'max:2000'],
+            'task_due_at' => ['nullable', 'date'],
+            'task_priority' => ['required', 'string'],
+        ]);
+
+        $action->execute(auth()->user(), [
+            'title' => $validated['task_title'],
+            'description' => $validated['task_description'] !== '' ? $validated['task_description'] : null,
+            'due_at' => $validated['task_due_at'] !== '' ? $validated['task_due_at'] : null,
+            'priority' => \App\Enums\TaskPriority::from($validated['task_priority']),
+            'assigned_to' => auth()->user()->id,
+        ], $this->lead);
+
+        $this->reset([
+            'task_title', 'task_description', 'task_due_at', 'task_priority', 'showCreateTaskModal'
+        ]);
+        $this->task_priority = 'medium';
+
+        Flux::toast(variant: 'success', text: __('crm.tasks.create'));
+    }
 }; ?>
 
-<section class="w-full">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 lg:p-6">
+<div class="w-full">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <x-crm.entity-header
             :title="$lead->contact_name"
             :subtitle="$lead->company_name ?: __('crm.leads.title')"
@@ -159,9 +223,16 @@ new #[Title('Lead')] class extends Component {
             :badge-color="$lead->status->color()"
             data-tour="lead-header"
         >
+            <x-slot:breadcrumbs>
+                <flux:breadcrumbs>
+                    <flux:breadcrumbs.item icon="home" href="{{ route('crm.dashboard') }}" />
+                    <flux:breadcrumbs.item href="{{ route('crm.leads.index') }}" wire:navigate>{{ __('crm.nav.leads') }}</flux:breadcrumbs.item>
+                    <flux:breadcrumbs.item>{{ $lead->contact_name }}</flux:breadcrumbs.item>
+                </flux:breadcrumbs>
+            </x-slot:breadcrumbs>
             <x-slot:actions>
                 @can('convert', $lead)
-                    <flux:button variant="primary" wire:click="convert" data-tour="lead-convert">
+                    <flux:button variant="primary" wire:click="$set('showConvertModal', true)" data-tour="lead-convert">
                         {{ __('crm.actions.convert') }}
                     </flux:button>
                 @endcan
@@ -182,7 +253,7 @@ new #[Title('Lead')] class extends Component {
         </x-crm.entity-header>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-details">
+            <article class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-details">
                 <flux:heading size="lg">{{ __('crm.labels.contact') }}</flux:heading>
 
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -236,10 +307,15 @@ new #[Title('Lead')] class extends Component {
                         </div>
                     </div>
                 @endif
-            </section>
+            </article>
 
-            <section class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
-                <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
+            <aside class="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900">
+                <div class="mb-3 flex items-center justify-between gap-2">
+                    <flux:heading size="lg">{{ __('crm.dashboard.upcoming_tasks') }}</flux:heading>
+                    @can('create', \App\Models\CRM\Task::class)
+                        <flux:button size="sm" variant="ghost" icon="plus" class="h-8 w-8 !p-0" wire:click="$set('showCreateTaskModal', true)" />
+                    @endcan
+                </div>
 
                 @if ($this->tasks->isEmpty())
                     <x-crm.empty-state icon="clipboard-document" :heading="__('crm.tasks.title')" :subheading="__('crm.tasks.create')" class="py-8" />
@@ -258,20 +334,20 @@ new #[Title('Lead')] class extends Component {
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </aside>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <section class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
+            <aside class="rounded-xl border border-neutral-200 bg-white p-4 xl:col-span-2 dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="mb-4 flex items-center justify-between">
                     <flux:heading size="lg">{{ __('crm.dashboard.recent_activity') }}</flux:heading>
                 </div>
 
                 <x-crm.activity-timeline :activities="$this->activities" />
-            </section>
+            </aside>
 
             @if (auth()->user()->can('activities.create'))
-                <section class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-activity-form">
+                <aside class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-zinc-900" data-tour="lead-activity-form">
                     <flux:heading size="lg">{{ __('crm.actions.log_activity') }}</flux:heading>
 
                     <form wire:submit="createActivity" class="mt-4 space-y-3">
@@ -291,7 +367,7 @@ new #[Title('Lead')] class extends Component {
                             <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
                         </div>
                     </form>
-                </section>
+                </aside>
             @endif
         </div>
     </div>
@@ -350,4 +426,70 @@ new #[Title('Lead')] class extends Component {
             </div>
         </div>
     </flux:modal>
-</section>
+
+    <flux:modal wire:model="showCreateTaskModal" class="max-w-2xl">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.tasks.create') }}</flux:heading>
+
+            <form wire:submit="createTask" class="space-y-4">
+                <flux:input wire:model="task_title" :label="__('crm.labels.title')" required />
+
+                <div class="grid gap-3 md:grid-cols-2">
+                    <flux:input wire:model="task_due_at" :label="__('crm.labels.due_at')" type="datetime-local" />
+                    <flux:field>
+                        <flux:label>{{ __('crm.labels.priority') }}</flux:label>
+                        <flux:select wire:model="task_priority" required>
+                            @foreach (\App\Enums\TaskPriority::cases() as $priority)
+                                <option value="{{ $priority->value }}">{{ $priority->label() }}</option>
+                            @endforeach
+                        </flux:select>
+                    </flux:field>
+                </div>
+
+                <flux:textarea wire:model="task_description" :label="__('crm.labels.description')" rows="3" />
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showCreateTaskModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.save') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model="showConvertModal" class="max-w-md">
+        <div class="space-y-4">
+            <flux:heading>{{ __('crm.actions.convert') }}</flux:heading>
+
+            <form wire:submit="convert" class="space-y-4">
+                <flux:field>
+                    <flux:label>{{ __('crm.labels.company') }} ({{ __('Optional') }})</flux:label>
+                    <flux:select wire:model="convert_company_id">
+                        <option value="">— {{ __('Create new Company dynamically') }} —</option>
+                        @foreach ($this->companies as $company)
+                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>{{ __('crm.labels.contact') }} ({{ __('Optional') }})</flux:label>
+                    <flux:select wire:model="convert_contact_id">
+                        <option value="">— {{ __('Create new Contact dynamically') }} —</option>
+                        @foreach ($this->contacts as $contact)
+                            <option value="{{ $contact->id }}">{{ $contact->fullName() }}</option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+
+                <div class="flex justify-end gap-2">
+                    <flux:button type="button" variant="ghost" wire:click="$set('showConvertModal', false)">
+                        {{ __('crm.actions.cancel') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">{{ __('crm.actions.convert') }}</flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+</div>
